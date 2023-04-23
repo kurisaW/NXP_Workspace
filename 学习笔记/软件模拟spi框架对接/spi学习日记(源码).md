@@ -51,9 +51,49 @@ rt_err_t rt_spi_bus_attach_device(struct rt_spi_device *device,
 }
 ```
 
+---
+
+由于软件spi需要添加spi总线设备到spi设备对象中，可以先来看看`rt_spi_bit_add_bus`函数的实现，主要有以下三个参数：
+
+* `struct rt_spi_bit_obj *obj`：spi结构体对象
+* const char            *bus_name：总线名称
+* struct rt_spi_bit_ops *ops：spi对象操作函数，由于我们实现的是软件spi，因此需要对此重新构建，这是我们需要；重点实现的功能之一
+
+```c
+rt_err_t rt_spi_bit_add_bus(struct rt_spi_bit_obj *obj,
+                            const char            *bus_name,
+                            struct rt_spi_bit_ops *ops)
+{
+    obj->ops = ops;
+    obj->config.data_width = 8;
+    obj->config.max_hz     = 1 * 1000 * 1000;
+    obj->config.mode       = RT_SPI_MASTER | RT_SPI_MSB | RT_SPI_MODE_0;
+
+    /* idle status */
+    if (obj->config.mode & RT_SPI_CPOL) SCLK_H(ops);
+    else                                SCLK_L(ops);
+
+    return rt_spi_bus_register(&obj->bus, bus_name, &spi_bit_bus_ops);
+}
+```
 
 
 
+
+
+![image-20230422160357589](https://raw.githubusercontent.com/kurisaW/picbed/main/img2023/202304221603739.png)
+
+
+
+
+
+
+
+![](https://raw.githubusercontent.com/kurisaW/picbed/main/img2023/202304221600048.png)
+
+![image-20230422160143656](https://raw.githubusercontent.com/kurisaW/picbed/main/img2023/202304221601719.png)
+
+![](https://raw.githubusercontent.com/kurisaW/picbed/main/img2023/202304221558485.png)
 
 
 
@@ -107,4 +147,6 @@ static struct rt_spi_bit_ops lpc_soft_spi_ops =
         .delay_us = 1,
 };
 ```
+
+
 
